@@ -1,47 +1,42 @@
 %GENERATE DATA
-n = 15;
+n = 25;
 data = zeros(n,2);
-mux = 5;
-muy = 5;
-sdx = 2;
-sdy = 2;
 
 %Creates random independent data
 for i = 1:n
-    data(i,1) = normrnd(mux,sdx);
-    data(i,2) = normrnd(muy,sdy);
+    data(i,1) = normrnd(5,2);
+    data(i,2) = normrnd(5,2);
 end
-
 
 
 %scatterplot of data
 scatter(data(:,1),data(:,2));
 
+%set number of nearest neighbours
+k = 3;
+
 %determines which point: p is the closest
-mindist = 1000000000;
-for i = 1:n
-    if i ~= 1
-        dist = sqrt((data(i,1)-data(1,1))^2 + (data(i,2)-data(1,2))^2);
-%         if mindist == 0   %sets first distance
-%             mindist = dist;
-%         end
-        if dist < mindist
-            mindist = dist;
-            p = i;
-        end
-    end
-end
+dist = zeros(n,1);
+dist(:,1) = sqrt((data(:,1)-data(1,1)).^2 + (data(:,2)-data(1,2)).^2);
+dist(dist==0) = nan;
+[mindist,p] = mink(dist,k);
+
 %determines epsilon values of nearest neighbour
-epx = abs(data(p,1) - data(1,1));
-epy = abs(data(p,2) - data(1,2));
-ep = max(epx,epy);
+ep = zeros(k,2);
+for i = 1:k
+    ep(i,1) = abs(data(p(i),1) - data(1,1));
+    ep(i,2) = abs(data(p(i),2) - data(1,2));
+end
+epx = max(ep(:,1));
+epy = max(ep(:,2));
+
 %count up nx
 nx = 0;
-ub = data(1,1) + ep;  %bounds
-lb = data(1,1) - ep;
-for k = 1:n
-    if k ~= 1
-        if lb < data(k,1) && data(k,1) < ub
+ub = data(1,1) + epx;  %bounds
+lb = data(1,1) - epx;
+for i = 1:n
+    if i ~= 1
+        if lb < data(i,1) && data(i,1) < ub
             nx = nx + 1;
         end
     end
@@ -51,11 +46,11 @@ xline(lb);
 
 %count up ny
 ny = 0;
-ub = data(1,2) + ep; %changes bounds for y
-lb = data(1,2) - ep;
-for k = 1:n
-    if k ~= 1
-        if lb < data(k,2) && data(k,2) < ub
+ub = data(1,2) + epy; %changes bounds for y
+lb = data(1,2) - epy;
+for i = 1:n
+    if i ~= 1
+        if lb < data(i,2) && data(i,2) < ub
             ny = ny + 1;
         end
     end
