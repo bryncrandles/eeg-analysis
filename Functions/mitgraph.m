@@ -2,11 +2,9 @@
 %VECTORS MUST BE OF EQUAL SIZE
 %k:number of nearest neighbours
 
-function v = mitgraph(x,y,k)
-    [~,n] = size(x);
+function v = mitgraph(x,y,k,maxdelay)
     %sets max time delay to half of the observations to keep sample size of
     %time delayed vectors still large
-    maxdelay = n/2;
     %v is a set of points (t,MI)
     v = zeros(maxdelay,2);
     for t = 1:maxdelay
