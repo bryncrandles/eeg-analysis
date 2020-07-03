@@ -1,6 +1,8 @@
 %Mutual information of a data set given breakpoints, etc using the KSG
 %method
 
+%Also calculates MI of time lagged data shifted up to parameter t
+
 %data: dataset of the certain condition we are interested in
 %breakpoints: vector of all breakpoints to be considered within 'data'
 %k: number of nearest neighbours for calculation (4 is generally good)
@@ -8,22 +10,37 @@
 %Note: breakpoints vector should have 0 as the first element since that is
 %the way the breakpoint vector was made for the coherence function
 
-function MIarray = mutualinfo(data,breakpoints,k)
+
+function MIarray = mutualinfo(data,breakpoints,k,maxdelay)
     [d,~] = size(data);
     [~,bp] = size(breakpoints);
-    MIarray = zeros(d,d);
+    MIarray = zeros(d,d,maxdelay+1);
     
     for i = 1:d
         for j = 1:d
             %Temporary Matrix for storing MI of each block of data
-            A = zeros(bp-1,1);
+            A = zeros(1,bp-1);
+            %Temp matrix for storing MI of each block of time lagged data
+            B = zeros(maxdelay,bp-1);
+            
             %Calculates and stores each block of data
             for m = 1:(bp-1)
+                %No time lag MI
                 group = [data(i,breakpoints(m)+1:breakpoints(m+1)-1)',data(j,breakpoints(m)+1:breakpoints(m+1)-1)'];
-                A(m,1) = mi(group,k);
+                A(1,m) = mi(group,k);
+                
+                %time lag MI up to maxdelay input
+                for t = 1:maxdelay                   
+                    I = mitimedelay(group(:,1),group(:,2),t,k);
+                    B(t,m) = I;
+                end
             end
             
-            MIarray(i,j) = mean(A);
+            %displays data in 3D matrix
+            MIarray(i,j,1) = mean(A);
+            for t = 1:maxdelay
+                MIarray(i,j,t+1) = mean(B(t,:));
+            end
         end
     end
 end
@@ -31,6 +48,7 @@ end
 
 
 %MI CALCULATION GIVEN "DATA"
+%****DATA MUST BE VERTICAL (FACTORS HORIZONTAL,TRIALS VERTICAL)
 function Ixy = mi(data,k)
     %retrieve n-obs and d-dim
     [n,~] = size(data);
@@ -84,4 +102,16 @@ function Ixy = mi(data,k)
 
     %KSG formula 2 for MI
     Ixy = psi(k) - 1/k - mean(array1) + psi(n);
+end
+
+%Calculates MI with time delay t and k nearest neighbours
+%****DATA MUST BE VERTICAL (FACTORS HORIZONTAL,TRIALS VERTICAL)
+function I = mitimedelay(x,y,t,k)
+    [n,~] = size(x);
+    %creates matrix of the two vectors shifted by t
+    group = zeros(n-t,2);
+    group(:,1) = x(1:n-t,1);
+    group(:,2) = y(1+t:n,1);
+    %calculates MI
+    I = mi(group,k);
 end
