@@ -1,7 +1,7 @@
 %Mutual information of a data set given breakpoints, etc using the KSG
 %method
 
-%Also calculates MI of time lagged data shifted up to parameter t
+%Also estimates MI of time-lagged data shifted up to parameter t (maxdelay)
 
 %data: dataset of the certain condition we are interested in
 %breakpoints: vector of all breakpoints to be considered within 'data'
@@ -11,32 +11,54 @@
 %the way the breakpoint vector was made for the coherence function
 
 
-function MIarray = mutualinfo(data,breakpoints,k,maxdelay)
+function MIarray = mutualinfo(data,breakpoints,k,tms)
+    maxdelay = floor(tms/2);    
     [d,~] = size(data);
     [~,bp] = size(breakpoints);
     MIarray = zeros(d,d,maxdelay+1);
     
     for i = 1:d
         for j = 1:d
-            %Temporary Matrix for storing MI of each block of data
+            %Temporary Matrix for storing MI of each block of data between
+            %breakpoints
             A = zeros(1,bp-1);
             %Temp matrix for storing MI of each block of time lagged data
+            %between breakpoints
             B = zeros(maxdelay,bp-1);
             
-            %Calculates and stores each block of data
+            %Calculates and stores each block of data in A and B
             for m = 1:(bp-1)
                 %No time lag MI
                 group = [data(i,breakpoints(m)+1:breakpoints(m+1)-1)',data(j,breakpoints(m)+1:breakpoints(m+1)-1)'];
-                A(1,m) = mi(group,k);
+                %Averages MI of subgroups of group of length 1 second(500)
+                [gsize,~] = size(group);
+                g = floor(gsize/500);
+                if g > 0
+                    for q = 1:g
+                        subgroup = group(1+500*(q-1):500*q,:);
+                        A(1,m) = A(1,m) + mi(subgroup,k);
+                    end
+                    A(1,m) = A(1,m)/g;
+                else
+                    A(1,m) = mi(group,k);
+                end
                 
                 %time lag MI up to maxdelay input
                 for t = 1:maxdelay                   
-                    I = mitimedelay(group(:,1),group(:,2),t,k);
-                    B(t,m) = I;
+                    %Averages MI of subgroups of group of length 1 second(500)
+                    if g > 0
+                        for q = 1:g
+                            subgroup = group(1+500*(q-1):500*q,:);
+                            B(t,m) = B(t,m) + mitimedelay(subgroup(:,1),subgroup(:,2),t,k);
+                        end
+                        B(t,m) = B(t,m)/g;
+                    else
+                        B(t,m) = mitimedelay(group(:,1),group(:,2),t,k);
+                    end
                 end
             end
             
-            %displays data in 3D matrix
+            %displays data in 3D matrix by averaging A and B
             MIarray(i,j,1) = mean(A);
             for t = 1:maxdelay
                 MIarray(i,j,t+1) = mean(B(t,:));
