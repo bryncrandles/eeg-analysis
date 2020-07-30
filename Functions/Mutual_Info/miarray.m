@@ -14,8 +14,7 @@
 
 %k: number of nearest neighbours for calculation (4 is generally good)
 %tms: max time delay to analyze in milliseconds
-%sr: Sampling rate (how many data points per millisecond) Ex. for 1 data point
-%every two milliseconds you would input sr = 0.5
+%sr: Sampling rate (how many data points per second)
 
 %avgrate: to save time, each block of data is divided into chunks of a
 %certain length and then an average of those estimates is taken for the
@@ -36,7 +35,8 @@
 
 function MIarray = miarray(data,breakpoints,k,tms,sr,avgrate)
     %Initializes some variables
-    maxdelay = floor(tms*sr); 
+    sr = sr/1000;
+    maxdelay = floor(tms*sr);
     chunk = avgrate*sr;
     [d,~] = size(data);
     [~,bp] = size(breakpoints);
@@ -54,38 +54,46 @@ function MIarray = miarray(data,breakpoints,k,tms,sr,avgrate)
                 %Retrieves data from between breakpoints
                 x = data(i,breakpoints(m)+1:breakpoints(m+1)-1);
                 y = data(j,breakpoints(m)+1:breakpoints(m+1)-1);
-                n = size(x);
-                %g is number of chunks of data to be averaged over
-                g = floor(n/chunk);
-                if g > 0
-                    for q = 1:g
-                        %isolates the chunk of data to have MI estimated
-                        %and then estimates it and adds it to overall sum
-                        xsub = x(1,1+chunk*(q-1):chunk*q);
-                        ysub = y(1,1+chunk*(q-1):chunk*q);
-                        A(m,1) = A(m,1) + mi(xsub,ysub,k);
-                        %estimates MI time-delayed for each chunk as well
+                [~,n] = size(x);
+                
+                if n > 2*maxdelay
+                    %g is number of chunks of data to be averaged over
+                    g = floor(n/chunk);
+                    if g > 0
+                        for q = 1:g
+                            %isolates the chunk of data to have MI estimated
+                            %and then estimates it and adds it to overall sum
+                            xsub = x(1,1+chunk*(q-1):chunk*q);
+                            ysub = y(1,1+chunk*(q-1):chunk*q);
+                            A(m,1) = A(m,1) + mi(xsub,ysub,k);
+                            %estimates MI time-delayed for each chunk as well
+                            for t = 1:maxdelay
+                                A(m,t+1) = A(m,t+1) + mitimedelay(xsub,ysub,t,k);
+                            end
+                        end
+                        %Takes average by dividing by g
+                        A(m,:) = A(m,:)/g;
+                    elseif g == 0
+                        %This section runs if the size of a chunk is less than
+                        %"chunk".  Then it just takes regular MI of that
+                        %section as well as time-delayed MI
+                        A(m,1) = mi(x,y,k);
                         for t = 1:maxdelay
-                            A(m,t+1) = A(m,t+1) + mitimedelay(xsub,ysub,t,k);
+                            A(m,t+1) = mitimedelay(x,y,t,k);
                         end
                     end
-                    %Takes average by dividing by g
-                    A(m,:) = A(m,:)/g;
                 else
-                    %This section runs if the size of a chunk is less than
-                    %"chunk".  Then it just takes regular MI of that
-                    %section as well as time-delayed MI
-                    A(m,1) = mi(x,y,k);
+                    A(m,1) = 0;
                     for t = 1:maxdelay
-                        A(m,t+1) = mitimedelay(x,y,t,k);
+                        A(m,t+1) = 0;
                     end
                 end
             end
             
             %displays data in 3D matrix by averaging columns of A
-            MIarray(i,j,1) = mean(A(:,1));
+            MIarray(i,j,1) = sum(A(:,1))/sum(A(:,1)~=0);
             for t = 1:maxdelay
-                MIarray(i,j,t+1) = mean(A(:,t+1));
+                MIarray(i,j,t+1) = sum(A(:,t+1))/sum(A(:,t+1)~=0);
             end
         end
     end
