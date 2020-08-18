@@ -7,7 +7,7 @@
 function Ixy = mi(x,y,k)
     %retrieve n from one of the vectors
     [~,n] = size(x);
-
+    
     %array for helping with the sum in MI formula
     array1 = zeros(1,n);
 
@@ -30,6 +30,7 @@ function Ixy = mi(x,y,k)
 
         %determines epsilon values of nearest neighbour (biggest difference
         %in x and biggest difference among the y's)
+%         disp(k)
         ep = zeros(2,k);
         for i = 1:k
             ep(1,i) = abs(x(p(i)) - x(j));
