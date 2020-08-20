@@ -1,6 +1,7 @@
-%Mutual information of a data set given breakpoints, etc using the KSG
-%method
+%Mutual information of a data set given breakpoints, etc using histogram
+%binning method
 %Also estimates MI of time-lagged data shifted up to parameter t (maxdelay)
+%Function was created for estimating MI of EEG data
 
 %INPUTS******
 %data: dataset of the certain condition we are interested in (Data should 
@@ -12,15 +13,12 @@
 %the way the breakpoint vector was made for the coherence function
 %Ex. [0, 200, 789, 4800]
 
-%k: number of nearest neighbours for calculation (4 is generally good)
 %tms: max time delay to analyze in milliseconds
 %sr: Sampling rate (how many data points per second)
 
-%avgrate: to save time, each block of data is divided into chunks of a
-%certain length and then an average of those estimates is taken for the
-%final estimate. avgrate is the size of data you would like to partition
-%the data into in milliseconds. Ex. Input 1000 as avgrate to just calculate
-%MI for each second of data and then average all the seconds' MIs together
+%avgrate: rate to take MI estimate of and then average over all estimates
+%in milliseconds.  ex.  use 4000 to take average MI of each 4 second chunk.
+%4000 recommended for histogram binning method to get accurate results
 
 %OUTPUT******
 %3D Matrix is outputted showing MI of each variable with all the others and
@@ -33,11 +31,11 @@
 %the MI of the x-var(horizontal) between the y-var(vertical) say 20ms ago
 
 
-function MIarray = miarray(data,breakpoints,k,tms,sr,avgrate)
+function MIarray = miarray(data,breakpoints,tms,sr,avgrate)
     %Initializes some variables
     sr = sr/1000;
     maxdelay = floor(tms*sr);
-    chunk = avgrate*sr;
+    avgrate = avgrate*sr;
     [d,~] = size(data);
     [~,bp] = size(breakpoints);
     bp = bp - 1;
@@ -50,6 +48,7 @@ function MIarray = miarray(data,breakpoints,k,tms,sr,avgrate)
             A = zeros(bp,maxdelay+1);
 
             %Calculates and stores each block of data in A
+            %Loop for between breakpoints%
             for m = 1:bp
                 %Retrieves data from between breakpoints
                 x = data(i,breakpoints(m)+1:breakpoints(m+1)-1);
@@ -58,28 +57,33 @@ function MIarray = miarray(data,breakpoints,k,tms,sr,avgrate)
                 
                 if n > 2*maxdelay
                     %g is number of chunks of data to be averaged over
-                    g = floor(n/chunk);
+                    g = floor(n/avgrate);
                     if g > 0
                         for q = 1:g
                             %isolates the chunk of data to have MI estimated
                             %and then estimates it and adds it to overall sum
-                            xsub = x(1,1+chunk*(q-1):chunk*q);
-                            ysub = y(1,1+chunk*(q-1):chunk*q);
-                            A(m,1) = A(m,1) + mi(xsub,ysub,k);
+                            xsub = x(1,1+avgrate*(q-1):avgrate*q);
+                            ysub = y(1,1+avgrate*(q-1):avgrate*q);
+                            A(m,1) = A(m,1) + mihist(xsub,ysub);
                             %estimates MI time-delayed for each chunk as well
                             for t = 1:maxdelay
-                                A(m,t+1) = A(m,t+1) + mitimedelay(xsub,ysub,t,k);
+                                A(m,t+1) = A(m,t+1) + mitimedelay(xsub,ysub,t);
                             end
                         end
                         %Takes average by dividing by g
                         A(m,:) = A(m,:)/g;
                     elseif g == 0
                         %This section runs if the size of a chunk is less than
-                        %"chunk".  Then it just takes regular MI of that
-                        %section as well as time-delayed MI
-                        A(m,1) = mi(x,y,k);
+                        %"avgrate".  Since we are using binning method we
+                        %ignore chunks that are too small since the binning
+                        %method may not be accurate for them
+%                         A(m,1) = mihist(x,y);
+%                         for t = 1:maxdelay
+%                             A(m,t+1) = mitimedelay(x,y,t);
+%                         end
+                        A(m,1) = 0;
                         for t = 1:maxdelay
-                            A(m,t+1) = mitimedelay(x,y,t,k);
+                            A(m,t+1) = 0;
                         end
                     end
                 else
