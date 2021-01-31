@@ -6,11 +6,14 @@
 #Compute's the accuracy of LDA including dimension reduction by PCA.  Factors can be manually changed
 #by commenting out different read.table lines
 
+#https://towardsdatascience.com/principal-component-analysis-pca-101-using-r-361f4c53a9ff
+#Website describing how to use package for plotting principle components
+
 cat("\f")
 rm(list = ls())
 
 #Retrieve Data and cross-validation Function
-setwd('~/R/LDA/')
+setwd('~/R/LDA/Data/')
 data <- cbind(read.table('SWP_Tables_Beta.txt'),
               read.table('SWP_Tables_Delta.txt'),
               read.table('SWP_Tables_HighAlpha.txt'),
@@ -26,16 +29,24 @@ data <- cbind(read.table('SWP_Tables_Beta.txt'),
               read.table('PL_High_Alpha.txt'),
               read.table('PL_Low_Alpha.txt'),
               read.table('PL_Theta.txt'))
+#data <- cbind(#read.table('nodeCCbeta.txt'),
+              # read.table('nodeCCdelta.txt'),
+              # read.table('nodeCChighalpha.txt'),
+              # read.table('nodeCClowalpha.txt'),
+              # read.table('nodeCCtheta.txt'),
+              # read.table('nodePLbeta.txt'),
+              # read.table('nodePLdelta.txt'),
+              # read.table('nodePLhighalpha.txt'),
+              # read.table('nodePLlowalpha.txt'),
+              # read.table('nodePLtheta.txt'))
+setwd('~/R/LDA/')
 source('LDACrossValidation.R')
+pcause <- T
+
 
 
 ####If you want to see the scree plot and first two PC's for PCA
 pca <- prcomp(data,scale=T)
-#plot(pca$x[,1],pca$x[,2])  #Simple but useless plot
-
-#https://towardsdatascience.com/principal-component-analysis-pca-101-using-r-361f4c53a9ff
-#Website describing how to use the following package for future reference
-
 #Add group factor
 group <- c(rep("Control",73),rep("Schiz",42))
 data.df <- cbind(group,data)
@@ -49,13 +60,13 @@ fviz_pca_ind(pca, geom.ind = "point", pointshape=21,
              palette = "simpsons",  #Use Simpson's colour palette for fun :)
              addEllipses = T,
              legend.title = "Group")+
-  ggtitle("PC1 vs. PC2 - SWP,CC,PL") 
-
+  ggtitle("PC1 vs. PC2 - Node PL") 
 
 #Scree Plot
 pca.var <- pca$sdev^2
 pca.var.per <- round(pca.var/sum(pca.var)*100,1)
 barplot(pca.var.per,main="Scree Plot",xlab="Principle Component",ylab="Percent Variation")
+
 
 
 
@@ -66,11 +77,22 @@ barplot(pca.var.per,main="Scree Plot",xlab="Principle Component",ylab="Percent V
 data <- data[-c(sample(1:73,3),sample(74:115,2)),]
 
 #Create table for accuracies for all numbers of pcs used
-pcaccuracy <- matrix(0,nrow = 3,ncol = ncol(data))
+maxpcs <- min(ncol(data),30)
+pcaccuracy <- matrix(0,nrow = 3,ncol = maxpcs)
 rownames(pcaccuracy) <- c("Total Acc","Control Acc","Schiz Acc")
 
 #Function does not work using just 1 principle component so it will be left out
 #Computes accuracies for each number of PC's used
-for (pc in 2:ncol(data)){
-  pcaccuracy[,pc] <- LDACrossValidation(data,pc)
-} 
+if (pcause == T){
+  for (pc in 2:maxpcs){
+    LDAoutput <- LDACrossValidation(data,pc,T)
+    ldaccuracy[,pc] <- LDAoutput[[1]]
+  }
+}else if (pcause == F){
+  LDAoutput <- LDACrossValidation(data,1,F)
+  ldaccuracy[,1] <- LDAoutput[[1]]
+}
+
+#Add row to show number of pc's used, then order from highest to lowest
+pcaccuracy <- rbind(pcaccuracy,1:maxpcs)
+pcaccuracy[,order(pcaccuracy[1,],decreasing = T)]
