@@ -17,6 +17,7 @@
 
 
 LDACrossValidation <- function(data,pc,usepca){
+  pcsused <- 1:pc
   
   #Matrix to store accuracies for each k.  Will be averaged at the end
   accuracy <- matrix(0,nrow = 10,ncol = 3)
@@ -38,7 +39,7 @@ LDACrossValidation <- function(data,pc,usepca){
       #Run PCA
       pca <- prcomp(train, scale = T)
       #Select first 'pc' principal components
-      pcadata <- as.matrix(pca$x[,1:pc])
+      pcadata <- as.matrix(pca$x[,pcsused])
       
       ##Let group 1 be controls (rows 1-63) and group 2 be patients (rows 64-99)
       #Mu vectors
@@ -68,9 +69,10 @@ LDACrossValidation <- function(data,pc,usepca){
         #Applies transformation from PCA to each obs and selects correct no. of PC's 
         #(y is a dummy variable)
         y <- (test[i,] - pca$center)/pca$scale
+        #y <- as.matrix(y)%*%pca$rotation
         y <- as.matrix(y)%*%pca$rotation
         #x is the observed value for classification
-        x <- y[,1:pc]%*%spoolinv%*%(mu2 - mu1)
+        x <- y[,pcsused]%*%spoolinv%*%(mu2 - mu1)
         if (x <= critval){
           Indic1[i] <- 1
         }else{
@@ -81,8 +83,9 @@ LDACrossValidation <- function(data,pc,usepca){
       }
       for (i in 1:4){
         y <- (test[i+7,] - pca$center)/pca$scale
+        #y <- as.matrix(y)%*%pca$rotation
         y <- as.matrix(y)%*%pca$rotation
-        x <- y[,1:pc]%*%spoolinv%*%(mu2 - mu1)
+        x <- y[,pcsused]%*%spoolinv%*%(mu2 - mu1)
         if (x > critval){
           Indic2[i] <- 1
         }else{
@@ -117,21 +120,21 @@ LDACrossValidation <- function(data,pc,usepca){
       #Recall LDA rule classifies to group 2 (schiz's here) if 'x' > critval
       for (i in 1:7){
         #x is the observed value for classification
-        x <- as.matrix(test[i,])%*%spoolinv%*%(mu2 - mu1)
+        x <- (test[i,])%*%spoolinv%*%(mu2 - mu1)
         if (x <= critval){
           Indic1[i] <- 1
         }else{
           #y still carries the id number of the person so extract number from there
           #If misclassified, add that id number to the list
-          misclassified <- c(misclassified,rownames(y))
+          #misclassified <- c(misclassified,rownames(y))
         }
       }
       for (i in 1:4){
-        x <- as.matrix(test[i+7,])%*%spoolinv%*%(mu2 - mu1)
+        x <- (test[i+7,])%*%spoolinv%*%(mu2 - mu1)
         if (x > critval){
           Indic2[i] <- 1
         }else{
-          misclassified <- c(misclassified,rownames(y))
+          #misclassified <- c(misclassified,rownames(y))
         }
       }
     }  

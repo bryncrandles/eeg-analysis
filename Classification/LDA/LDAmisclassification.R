@@ -1,4 +1,5 @@
-#Find misclassified subjects
+#Finds misclassified subjects, as well as estimates the total and group accuracies 
+#for the Final Model
 
 
 cat("\f")
@@ -7,21 +8,23 @@ rm(list = ls())
 setwd('~/R/LDA/')
 source('LDACrossValidation.R')
 setwd('~/R/LDA/Data/')
-data <- cbind(read.table('SWP_Tables_Beta.txt'),
-              read.table('SWP_Tables_Delta.txt'),
-              read.table('SWP_Tables_HighAlpha.txt'),
-              read.table('SWP_Tables_LowAlpha.txt'),
-              read.table('SWP_Tables_Theta.txt'))
+data <- cbind(read.table('CC_Beta.txt'),
+              read.table('CC_Delta.txt'),
+              read.table('CC_High_Alpha.txt'),
+              read.table('CC_Low_Alpha.txt'),
+              read.table('CC_Theta.txt'))
 
 #Number of trials
 n <- 500
 TOTALacc <- 0
 TOTALcontrolacc <- 0
 TOTALpatientacc <- 0
+accuracies <- matrix(0,nrow = 3)
 
+#Misclassification array
 misc <- matrix(0,nrow = 115, ncol = 3)
 colnames(misc) <- c("# times misclassified","# times tested","Rate")
-accuracies <- matrix(0,nrow = 3)
+
 
 ###Start trials
 for (i in 1:n){
