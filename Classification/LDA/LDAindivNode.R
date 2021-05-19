@@ -7,7 +7,7 @@ library(xtable)
 
 #Import all datasets for individual nodes
 #1-73 - Controls, 74-115 patients
-setwd('~/R/LDA/Data/')
+setwd('~/R/Data/')
 betaCCdata <- read.table('nodeCCbeta.txt')
 deltaCCdata <- read.table('nodeCCdelta.txt')
 highalphaCCdata <- read.table('nodeCChighalpha.txt')
@@ -27,8 +27,8 @@ source('LDACrossValidation.R')
 accuracy <- matrix(0,nrow=129,ncol=4)
 colnames(accuracy) <- c("Total Acc","Control Acc","Patient Acc","# PC's")
 for (i in 1:129){
-  data <- cbind(betaCCdata[,i],deltaCCdata[,i],highalphaCCdata[,i],lowalphaCCdata[,i],thetaCCdata[,i])
-                #betaPLdata[,i],deltaPLdata[,i],highalphaPLdata[,i],lowalphaPLdata[,i],thetaPLdata[,i])
+  data <- cbind(#betaCCdata[,i],deltaCCdata[,i],highalphaCCdata[,i],lowalphaCCdata[,i],thetaCCdata[,i],
+                betaPLdata[,i],deltaPLdata[,i],highalphaPLdata[,i],lowalphaPLdata[,i],thetaPLdata[,i])
   
   #randomly remove 3 controls and 2 patients to have even # in each group
   #(70 controls and 40 patients)
@@ -47,5 +47,5 @@ for (i in 1:129){
 }
 
 #Write results into text file
-write.table(accuracy,file = 'CCnodeacc.txt',row.names=F,col.names=F)
+write.table(accuracy,file = 'PLnodeacc.txt',row.names=F,col.names=F)
 

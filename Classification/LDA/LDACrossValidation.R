@@ -70,7 +70,7 @@ LDACrossValidation <- function(data,pc,usepca){
         #(y is a dummy variable)
         y <- (test[i,] - pca$center)/pca$scale
         #y <- as.matrix(y)%*%pca$rotation
-        y <- as.matrix(y)%*%pca$rotation
+        y <- y%*%pca$rotation
         #x is the observed value for classification
         x <- y[,pcsused]%*%spoolinv%*%(mu2 - mu1)
         if (x <= critval){
@@ -84,7 +84,7 @@ LDACrossValidation <- function(data,pc,usepca){
       for (i in 1:4){
         y <- (test[i+7,] - pca$center)/pca$scale
         #y <- as.matrix(y)%*%pca$rotation
-        y <- as.matrix(y)%*%pca$rotation
+        y <- y%*%pca$rotation
         x <- y[,pcsused]%*%spoolinv%*%(mu2 - mu1)
         if (x > critval){
           Indic2[i] <- 1
@@ -120,7 +120,7 @@ LDACrossValidation <- function(data,pc,usepca){
       #Recall LDA rule classifies to group 2 (schiz's here) if 'x' > critval
       for (i in 1:7){
         #x is the observed value for classification
-        x <- (test[i,])%*%spoolinv%*%(mu2 - mu1)
+        x <- as.matrix(test[i,])%*%spoolinv%*%(mu2 - mu1)
         if (x <= critval){
           Indic1[i] <- 1
         }else{
@@ -130,7 +130,7 @@ LDACrossValidation <- function(data,pc,usepca){
         }
       }
       for (i in 1:4){
-        x <- (test[i+7,])%*%spoolinv%*%(mu2 - mu1)
+        x <- as.matrix(test[i+7,])%*%spoolinv%*%(mu2 - mu1)
         if (x > critval){
           Indic2[i] <- 1
         }else{

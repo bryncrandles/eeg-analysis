@@ -12,38 +12,44 @@ rm(list = ls())
 library(MASS)
 
 #Retrieve data
+setwd('~/R/Data/')
+data <- cbind(read.table('SWP_Beta.txt'),
+              read.table('SWP_Delta.txt'),
+              read.table('SWP_High_Alpha.txt'),
+              read.table('SWP_Low_Alpha.txt'),
+              read.table('SWP_Theta.txt'))
+              # read.table('CC_Beta.txt'),
+              # read.table('CC_Delta.txt'),
+              # read.table('CC_High_Alpha.txt'),
+              # read.table('CC_Low_Alpha.txt'),
+              # read.table('CC_Theta.txt'))
+              # read.table('PL_Beta.txt'),
+              # read.table('PL_Delta.txt'),
+              # read.table('PL_High_Alpha.txt'),
+              # read.table('PL_Low_Alpha.txt'),
+              # read.table('PL_Theta.txt'))
 setwd('~/R/LDA/')
-data <- cbind(read.table('SWP_Tables_Beta.txt'),
-              read.table('SWP_Tables_Delta.txt'),
-              read.table('SWP_Tables_HighAlpha.txt'),
-              read.table('SWP_Tables_LowAlpha.txt'),
-              read.table('SWP_Tables_Theta.txt'),
-              read.table('CC_Beta.txt'),
-              read.table('CC_Delta.txt'),
-              read.table('CC_High_Alpha.txt'),
-              read.table('CC_Low_Alpha.txt'),
-              read.table('CC_Theta.txt'),
-              read.table('PL_Beta.txt'),
-              read.table('PL_Delta.txt'),
-              read.table('PL_High_Alpha.txt'),
-              read.table('PL_Low_Alpha.txt'),
-              read.table('PL_Theta.txt'))
 source('QDACrossValidation.R')
 
-#randomly remove 3 controls and 2 patients to have even # in each group
-#(70 controls and 40 patients)
-data <- data[-c(sample(1:73,3),sample(74:115,2)),]
+N <- 100
+maxpcs <- min(30,ncol(data))
 
 #vector containing accuracy for each # of pc's used
-qdaccuracy <- matrix(0,nrow = 4, ncol = ncol(data))
-qdaccuracy[4,] <- 1:ncol(data)
+qdaccuracy <- matrix(0,nrow = 4, ncol = maxpcs)
 rownames(qdaccuracy) <- c("Overall Acc","Schiz Acc","Control Acc","# PC's")
-
-#Function does not work using just 1 principle component so it will be left out
-#Computes accuracies for each number of PC's used
-for (pc in 2:ncol(data)){
-  qdaccuracy[1:3,pc] <- QDACrossValidation(data,pc)
-} 
+for (i in 1:N){
+  #randomly remove 3 controls and 2 patients to have even # in each group
+  #(70 controls and 40 patients)
+  data2 <- data[-c(sample(1:73,3),sample(74:115,2)),]
+  
+  #Function does not work using just 1 principle component so it will be left out
+  #Computes accuracies for each number of PC's used
+  for (pc in 2:maxpcs){
+    qdaccuracy[1:3,pc] <- qdaccuracy[1:3,pc] + QDACrossValidation(data2,pc)
+  }
+}
+qdaccuracy <- qdaccuracy/N
+qdaccuracy[4,] <- 1:maxpcs
 
 #Sort by overall accuracy
 qdaccuracy[,order(qdaccuracy[1,],decreasing = T)]

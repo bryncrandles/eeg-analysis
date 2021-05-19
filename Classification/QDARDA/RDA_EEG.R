@@ -13,61 +13,56 @@ library(MASS)
 library(klaR)
 
 #Retrieve data
-setwd('~/R/LDA/Data/')
-# data <- cbind(read.table('SWP_Tables_Beta.txt'),
-#               read.table('SWP_Tables_Delta.txt'),
-#               read.table('SWP_Tables_HighAlpha.txt'),
-#               read.table('SWP_Tables_LowAlpha.txt'),
-#               read.table('SWP_Tables_Theta.txt'),
-#               read.table('CC_Beta.txt'),
-#               read.table('CC_Delta.txt'),
-#               read.table('CC_High_Alpha.txt'),
-#               read.table('CC_Low_Alpha.txt'),
-#               read.table('CC_Theta.txt'),
-#               read.table('PL_Beta.txt'),
-#               read.table('PL_Delta.txt'),
-#               read.table('PL_High_Alpha.txt'),
-#               read.table('PL_Low_Alpha.txt'),
-#               read.table('PL_Theta.txt'))
-data <- cbind(read.table('nodeCCbeta.txt'),
-              read.table('nodeCCdelta.txt'),
-              read.table('nodeCChighalpha.txt'),
-              read.table('nodeCClowalpha.txt'),
-              read.table('nodeCCtheta.txt'),
-              read.table('nodePLbeta.txt'),
-              read.table('nodePLdelta.txt'),
-              read.table('nodePLhighalpha.txt'),
-              read.table('nodePLlowalpha.txt'),
-              read.table('nodePLtheta.txt'))
+setwd('~/R/Data/')
+data <- cbind(#read.table('SWP_Beta.txt'),
+              # read.table('SWP_Delta.txt'),
+              # read.table('SWP_High_Alpha.txt'),
+              # read.table('SWP_Low_Alpha.txt'),
+              # read.table('SWP_Theta.txt'),
+              # read.table('CC_Beta.txt'),
+              # read.table('CC_Delta.txt'),
+              # read.table('CC_High_Alpha.txt'),
+              # read.table('CC_Low_Alpha.txt'),
+              # read.table('CC_Theta.txt'))
+              read.table('PL_Beta.txt'),
+              read.table('PL_Delta.txt'),
+              read.table('PL_High_Alpha.txt'),
+              read.table('PL_Low_Alpha.txt'),
+              read.table('PL_Theta.txt'))
 setwd('~/R/LDA/')
 source('RDACrossValidation.R')
-usepca <- T
-
-#randomly remove 3 controls and 2 patients to have even # in each group
-#(70 controls and 40 patients)
-data <- data[-c(sample(1:73,3),sample(74:115,2)),]
+usepca <- F
+N <- 10
 
 
 #vector containing accuracy for each # of pc's used
-maxpcs <- 115
-rdaccuracy <- matrix(0,nrow = 4, ncol = maxpcs)
-rdaccuracy[4,] <- 1:maxpcs
+rdaccuracy <- matrix(0,nrow = 4, ncol = ncol(data))
 rownames(rdaccuracy) <- c("Overall Acc","Schiz Acc","Control Acc","# PC's")
-
-
-#Function does not work using just 1 principle component so it will be left out
-#Computes accuracies for each number of PC's used
-if (usepca == T){
-  for (pc in 2:maxpcs){
-    rdaccuracy[1:3,pc] <- RDACrossValidation(data,pc,usepca)
-  } 
+for (i in 1:N){
+  print(i)
+  #randomly remove 3 controls and 2 patients to have even # in each group
+  #(70 controls and 40 patients)
+  data2 <- data[-c(sample(1:73,3),sample(74:115,2)),]
   
-  #Sort by overall accuracy
-  rdaccuracy[,order(rdaccuracy[1,],decreasing = T)]
-}else if (usepca == F){
-  rdaccuracy[1:3,1] <- RDACrossValidation(data,1,usepca)
-  rdaccuracy
+  #Function does not work using just 1 principle component so it will be left out
+  #Computes accuracies for each number of PC's used
+  if (usepca == T){
+    for (pc in 2:ncol(data2)){
+      rdaccuracy[1:3,pc] <- rdaccuracy[1:3,pc] + RDACrossValidation(data2,pc,usepca)
+    } 
+  }else if (usepca == F){
+    rdaccuracy[1:3,1] <- rdaccuracy[1:3,1] + RDACrossValidation(data2,1,usepca)
+  }
 }
+rdaccuracy <- rdaccuracy/N
+rdaccuracy[4,] <- 1:ncol(data2)
+
+#Sort by overall accuracy
+rdaccuracy[,order(rdaccuracy[1,],decreasing = T)]
+
+
+
+
 
 
 

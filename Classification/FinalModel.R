@@ -1,40 +1,111 @@
-#Final selected model from classification testing
-#Plots principle components of final model and retrieves the eigenvector
+#All analyses done after the final best model was selected can be found here
 
-#LDA classification method, 5 principle components, factors used: CC
 cat("\f")
-rm(list=ls())
+rm(list = ls())
 
-setwd('~/R/LDA/Data/')
+#Retrieve Data and cross-validation Function
+setwd('~/R/Data/')
 data <- cbind(read.table('CC_Beta.txt'),
               read.table('CC_Delta.txt'),
               read.table('CC_High_Alpha.txt'),
               read.table('CC_Low_Alpha.txt'),
               read.table('CC_Theta.txt'))
-colnames(data) <- c("BetaResting","BetaMusic","BetaFaces",
-                    "DeltaResting","DeltaMusic","DeltaFaces",
-                    "HAlphaResting", "HAlphaMusic","HAlphaFaces",
-                    "LAlphaResting","LAlphaMusic","LAlphaFaces",
-                    "ThetaResting","ThetaMusic","ThetaFaces")
-#Run PCA
-pca <- prcomp(data, scale = T)
 
-group <- c(rep("Control",73),rep("Patient",42))
+
+pca <- prcomp(data,scale=T)
+#Add group factor
+group <- c(rep("Control",73),rep("Schiz",42))
 data.df <- cbind(group,data)
-data.df$group <- as.factor(data.df$group)
+data.df$group <- factor(data.df$group)
 
-#Plots principle components against each other with ellipses
-#Change the "axes" and "ggtitle" lines to switch to different pairs of PC's
+#####View the first 6 pcs
+eigenvectors <- pca$rotation[,1:6]
+rownames(eigenvectors) <- c("BetaResting","BetaMusic","BetaFaces",
+                       "DeltaResting","DeltaMusic","DeltaFaces",
+                       "HighAlphaResting","HighAlphaMusic","HighAlphaFaces",
+                       "LowAlphaResting","LowAlphaMusic","LowAlphaFaces",
+                       "ThetaResting","ThetaMusic","ThetaFaces")
+eigenvectors
+
+
+#####Plots of first six pcs against eachother
 library(factoextra)
-fviz_pca_ind(pca, geom.ind = "point", pointshape=21,
-             axes = c(4,5), #Specifies which two pcs to plot
-             pointsize=2,
-             fill.ind  = data.df$group,
-             palette = "simpsons",
-             addEllipses = T,
-             legend.title = "Group")+
-  ggtitle("PC4 vs. PC5")
+for (i in 1:5){
+  for (j in (i+1):6){
+    plot(fviz_pca_ind(pca, geom.ind = "point", pointshape=21,
+                 axes = c(i,j), #Specifies which two pcs to plot
+                 pointsize=2,
+                 fill.ind  = data.df$group,
+                 palette = "simpsons",
+                 addEllipses = T,
+                 legend.title = "Group")+
+      ggtitle(paste("PC",i," vs. PC",j)))
+  }
+}
 
-#Retrieve eigenvectors
-eigenvectors <- as.data.frame(pca$rotation[,1:5])
-eigenvectors <- round(eigenvectors,4)
+#####Histograms
+library(sm)
+for (i in 1:6){
+  datatransform <- as.matrix(data)%*%eigenvectors[,i]
+  sm.density.compare(as.vector(datatransform),as.factor(group),col=c("blue","red"),
+                     xlab = paste("PC",i))
+  title(main = paste("CC - PC",i," Group Comparison"))
+  legend(locator(1),legend = c("Control","Patient"),fill = c("blue","red"))
+}
+
+
+
+#####Permutation Test
+library(MASS)
+accobs <- 0.7055 #CC
+#permutation test
+n <- 100000
+acc <- vector(mode="double",length = n)
+group <- c(rep("Control",60),rep("Patient",35))
+
+for (i in 1:n){
+  #Shuffle data and apply dimension reduction
+  datashuffle <- as.matrix(data[sample(1:115,115,replace=F),])
+  datatransform <- datashuffle%*%eigenvectors
+  
+  #Traindata consists of 60 controls followed by 35 patients
+  traindata <- datatransform[c(1:60,74:108),]
+  #Testdata consists of 13 controls followed by 7 patients
+  testdata <- datatransform[c(61:73,109:115),]
+  
+  #LDA
+  lda.obs <- lda(traindata, grouping = group)
+  #Predict and measure accuracy
+  pred <- predict(lda.obs,testdata)$class
+  acc[i] <- (sum(pred[1:13] == "Control") + sum(pred[14:20] == "Patient"))/20
+}
+#Retrieve p value
+pval <- length(acc[acc > accobs])/n
+#Plot permutation test
+hist(acc,main = paste("CC total accuracy perm test. p = ",pval,"\nn =",format(n,scientific = F)))
+abline(v=accobs,col="red")
+
+
+
+
+#####Individual PC Accuracies and Accuracies when removing PCS one at a time
+group <- c(rep("Control",73),rep("Schiz",42))
+for (i in 1:6){
+  datatransform <- as.matrix(data)%*%eigenvectors[,i]
+  #LDA
+  lda.obs <- lda(datatransform, grouping = group)
+  #Predict and measure accuracy
+  pred <- predict(lda.obs,datatransform)$class
+  acc <- (sum(pred[1:73] == "Control") + sum(pred[74:115] == "Patient"))/115
+  print(paste("PC",i,"=",round(acc,4)))
+}
+for (i in 1:6){  #removing pcs
+  datatransform <- as.matrix(data)%*%eigenvectors[,-i]
+  #LDA
+  lda.obs <- lda(datatransform, grouping = group)
+  #Predict and measure accuracy
+  pred <- predict(lda.obs,datatransform)$class
+  acc <- (sum(pred[1:73] == "Control") + sum(pred[74:115] == "Patient"))/115
+  print(paste("-PC",i,"=",round(acc,4),". Dif = ",0.7055 - round(acc,4)))
+}
+
