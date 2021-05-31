@@ -5,7 +5,7 @@
 
 #Returns Overall accuracy and both group accuracies
 
-QDACrossValidation <- function(data,pc){
+QDACrossValidation <- function(data,pc,usepca){
   
   #Matrix to store accuracies for each k.  Will be averaged at the end
   accuracy <- matrix(0,nrow = 10,ncol = 3)
@@ -19,26 +19,33 @@ QDACrossValidation <- function(data,pc){
     #Training data now consists of 63 control data points followed by 36 schiz data points
     #Testing data consists of 7 control data points followed by 4 schiz data points
     
-    
-    #Run PCA
-    pca <- prcomp(train, scale = T)
-    #Select first 'pc' principal components
-    pcadata <- as.matrix(pca$x[,1:pc])
-    
-    #Label data points by their class
-    cl <- factor(c(rep("c",63),rep("s",36)))
-    #compute QDA
-    q <- qda(pcadata,cl)
-    
-    #Applies transformation from PCA to each obs and selects correct no. of PC's 
-    #Scale testing data
-    for (i in 1:11){
-      test[i,] <- (test[i,] - pca$center)/pca$scale
+    if (usepca == T){
+      #Run PCA
+      pca <- prcomp(train, scale = T)
+      #Select first 'pc' principal components
+      pcadata <- as.matrix(pca$x[,1:pc])
+      
+      #Label data points by their class
+      cl <- factor(c(rep("c",63),rep("s",36)))
+      #compute QDA
+      q <- qda(pcadata,cl)
+      
+      #Applies transformation from PCA to each obs and selects correct no. of PC's 
+      #Scale testing data
+      for (i in 1:11){
+        test[i,] <- (test[i,] - pca$center)/pca$scale
+      }
+      #Transform testing data
+      test <- as.matrix(test)%*%pca$rotation
+      #Select first pc principle components
+      test <- test[,1:pc]
+    }else if (usepca == F){
+      #Label data points by their class
+      cl <- factor(c(rep("c",63),rep("s",36)))
+      #compute QDA
+      q <- qda(train,cl)
     }
-    #Transform testing data
-    test <- as.matrix(test)%*%pca$rotation
-    #Select first pc principle components
-    test <- test[,1:pc]
+    
     #Predict class of testing data
     pred <- predict(q,test)$class
     

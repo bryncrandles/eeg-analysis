@@ -12,25 +12,36 @@ rm(list = ls())
 library(MASS)
 library(klaR)
 
-#Retrieve data
-setwd('~/R/Data/')
-data <- cbind(#read.table('SWP_Beta.txt'),
-              # read.table('SWP_Delta.txt'),
-              # read.table('SWP_High_Alpha.txt'),
-              # read.table('SWP_Low_Alpha.txt'),
-              # read.table('SWP_Theta.txt'),
-              # read.table('CC_Beta.txt'),
-              # read.table('CC_Delta.txt'),
-              # read.table('CC_High_Alpha.txt'),
-              # read.table('CC_Low_Alpha.txt'),
-              # read.table('CC_Theta.txt'))
-              read.table('PL_Beta.txt'),
-              read.table('PL_Delta.txt'),
-              read.table('PL_High_Alpha.txt'),
-              read.table('PL_Low_Alpha.txt'),
-              read.table('PL_Theta.txt'))
 setwd('~/R/LDA/')
 source('RDACrossValidation.R')
+#Retrieve data
+setwd('~/R/Data/')
+# data <- cbind(#read.table('SWP_Beta.txt'),
+#               # read.table('SWP_Delta.txt'),
+#               # read.table('SWP_High_Alpha.txt'),
+#               # read.table('SWP_Low_Alpha.txt'),
+#               # read.table('SWP_Theta.txt'),
+#               # read.table('CC_Beta.txt'),
+#               # read.table('CC_Delta.txt'),
+#               # read.table('CC_High_Alpha.txt'),
+#               # read.table('CC_Low_Alpha.txt'),
+#               # read.table('CC_Theta.txt'))
+#               read.table('PL_Beta.txt'),
+#               read.table('PL_Delta.txt'),
+#               read.table('PL_High_Alpha.txt'),
+#               read.table('PL_Low_Alpha.txt'),
+#               read.table('PL_Theta.txt'))
+#Datafiles for node standard deviation measures
+data <- cbind(read.table('stdevCCbeta.txt'),
+              read.table('stdevCCdelta.txt'),
+              read.table('stdevCChighalpha.txt'),
+              read.table('stdevCClowalpha.txt'),
+              read.table('stdevCCtheta.txt'),
+              read.table('stdevPLbeta.txt'),
+              read.table('stdevPLdelta.txt'),
+              read.table('stdevPLhighalpha.txt'),
+              read.table('stdevPLlowalpha.txt'),
+              read.table('stdevPLtheta.txt'))
 usepca <- F
 N <- 10
 

@@ -12,6 +12,8 @@
 cat("\f")
 rm(list = ls())
 
+setwd('~/R/LDA/')
+source('LDACrossValidation.R')
 #Retrieve Data and cross-validation Function
 setwd('~/R/Data/')
 # data <- cbind(#read.table('SWP_Beta.txt'),
@@ -30,41 +32,50 @@ setwd('~/R/Data/')
 #               # read.table('PL_Low_Alpha.txt'),
 #               # read.table('PL_Theta.txt'))
 #Datafiles for node CC and PL values
-data <- cbind(#read.table('nodeCCbeta.txt'),
-# read.table('nodeCCdelta.txt'),
-# read.table('nodeCChighalpha.txt'),
-# read.table('nodeCClowalpha.txt'),
-# read.table('nodeCCtheta.txt'))
-read.table('nodePLbeta.txt'),
-read.table('nodePLdelta.txt'),
-read.table('nodePLhighalpha.txt'),
-read.table('nodePLlowalpha.txt'),
-read.table('nodePLtheta.txt'))
-setwd('~/R/LDA/')
-source('LDACrossValidation.R')
-pcause <- T
-N <- 1
+#data <- cbind(#read.table('nodeCCbeta.txt'),
+              # read.table('nodeCCdelta.txt'),
+              # read.table('nodeCChighalpha.txt'),
+              # read.table('nodeCClowalpha.txt'),
+              # read.table('nodeCCtheta.txt'))
+              # read.table('nodePLbeta.txt'),
+              # read.table('nodePLdelta.txt'),
+              # read.table('nodePLhighalpha.txt'),
+              # read.table('nodePLlowalpha.txt'),
+              # read.table('nodePLtheta.txt'))
+#Datafiles for node standard deviation measures
+data <- cbind(read.table('stdevCCbeta.txt'),
+              read.table('stdevCCdelta.txt'),
+              read.table('stdevCChighalpha.txt'),
+              read.table('stdevCClowalpha.txt'),
+              read.table('stdevCCtheta.txt'),
+              read.table('stdevPLbeta.txt'),
+              read.table('stdevPLdelta.txt'),
+              read.table('stdevPLhighalpha.txt'),
+              read.table('stdevPLlowalpha.txt'),
+              read.table('stdevPLtheta.txt'))
+pcause <- F
+N <- 100
 
 
-####If you want to see the scree plot and first two PC's for PCA
-pca <- prcomp(data,scale=T)
-#Add group factor
-group <- c(rep("Control",73),rep("Schiz",42))
-data.df <- cbind(group,data)
-data.df$group <- factor(data.df$group)
-#Plot first two PC's with different colours for the two groups
-library(factoextra)
-fviz_pca_ind(pca, geom.ind = "point", pointshape=21,
-             pointsize=2,
-             fill.ind  = data.df$group,
-             palette = "simpsons",  #Use Simpson's colour palette for fun :)
-             addEllipses = T,
-             legend.title = "Group")+
-  ggtitle("PC1 vs. PC2 - Node PL")
-#Scree Plot
-pca.var <- pca$sdev^2
-pca.var.per <- round(pca.var/sum(pca.var)*100,1)
-barplot(pca.var.per,main="Scree Plot",xlab="Principle Component",ylab="Percent Variation")
+# ####If you want to see the scree plot and first two PC's for PCA
+# pca <- prcomp(data,scale=T)
+# #Add group factor
+# group <- c(rep("Control",73),rep("Schiz",42))
+# data.df <- cbind(group,data)
+# data.df$group <- factor(data.df$group)
+# #Plot first two PC's with different colours for the two groups
+# library(factoextra)
+# fviz_pca_ind(pca, geom.ind = "point", pointshape=21,
+#              pointsize=2,
+#              fill.ind  = data.df$group,
+#              palette = "simpsons",  #Use Simpson's colour palette for fun :)
+#              addEllipses = T,
+#              legend.title = "Group")+
+#   ggtitle("PC1 vs. PC2 - Node PL")
+# #Scree Plot
+# pca.var <- pca$sdev^2
+# pca.var.per <- round(pca.var/sum(pca.var)*100,1)
+# barplot(pca.var.per,main="Scree Plot",xlab="Principle Component",ylab="Percent Variation")
 
 
 

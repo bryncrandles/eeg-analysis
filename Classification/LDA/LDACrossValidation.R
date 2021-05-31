@@ -69,8 +69,8 @@ LDACrossValidation <- function(data,pc,usepca){
         #Applies transformation from PCA to each obs and selects correct no. of PC's 
         #(y is a dummy variable)
         y <- (test[i,] - pca$center)/pca$scale
-        #y <- as.matrix(y)%*%pca$rotation
-        y <- y%*%pca$rotation
+        y <- as.matrix(y)%*%pca$rotation
+        #y <- y%*%pca$rotation
         #x is the observed value for classification
         x <- y[,pcsused]%*%spoolinv%*%(mu2 - mu1)
         if (x <= critval){
@@ -83,8 +83,8 @@ LDACrossValidation <- function(data,pc,usepca){
       }
       for (i in 1:4){
         y <- (test[i+7,] - pca$center)/pca$scale
-        #y <- as.matrix(y)%*%pca$rotation
-        y <- y%*%pca$rotation
+        y <- as.matrix(y)%*%pca$rotation
+        #y <- y%*%pca$rotation
         x <- y[,pcsused]%*%spoolinv%*%(mu2 - mu1)
         if (x > critval){
           Indic2[i] <- 1
